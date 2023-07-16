@@ -3,26 +3,27 @@
 #include <glfwpp/glfwpp.h>
 #include <iostream>
 #include <string>
+#include <vector>
 
+const int lineSize = 100;
+std::vector<float> vertices(lineSize * 2);
 
-void updateVertices(float* vertices, int lineSize)
+void updateVertices(std::vector<float> &vertices, float phase = 0.0f)
 {
-    for(int i = 0; i < lineSize * 2; i += 2)
+
+    for (int i = 0; i < vertices.size() * 2; i += 2)
     {
-        vertices[i] = (float)(i / 2) / lineSize;
-        vertices[i + 1] = (float)cos(i / (float)lineSize * 1 * 2 * 3.14159265358979323846);
+        vertices[i] = (float)(i) / vertices.size();
+        vertices[i + 1] = (float)cos(i / (float)vertices.size() * 1 * 2 * 3.14159265358979323846 + phase);
     }
 }
 
 int main()
 {
-    const int lineSize = 100;
-    float vertices[lineSize * 2] = {0.0f, 0.0f, 0.1f, 0.1f, 0.2f, 0.2f, 0.3f, 0.3f, 0.4f, 0.4f, 0.5f, 0.5f,
-                                     0.6f, 0.6f, 0.7f, 0.7f, 0.8f, 0.8f, 0.9f, 0.9f};
 
     std::cout << "Hello, GLFWPP!" << std::endl;
 
-    [[maybe_unused]] glfw::GlfwLibrary library = glfw::init();
+    glfw::GlfwLibrary library = glfw::init();
 
     glfw::WindowHints hints;
     hints.clientApi = glfw::ClientApi::OpenGl;
@@ -41,8 +42,7 @@ int main()
 
     GLenum error = glGetError();
 
-
-    if(wnd == nullptr)
+    if (wnd == nullptr)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
         // glfw::terminate();
@@ -56,11 +56,10 @@ int main()
     std::cout << "GLFW version: " << glfw::getVersionString() << std::endl;
 
     std::cout << "GLFW version: " << glGetString(GL_VERSION) << std::endl;
-    if(glewInit() != GLEW_OK)
+    if (glewInit() != GLEW_OK)
     {
         throw std::runtime_error("Could not initialize GLEW");
     }
-
 
     const std::string vertexShaderSource = R"(
         #version 330 core
@@ -81,13 +80,13 @@ int main()
     )";
 
     const auto vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    const GLchar* vertexShaderSourcePtr = vertexShaderSource.c_str();
+    const GLchar *vertexShaderSourcePtr = vertexShaderSource.c_str();
     glShaderSource(vertexShader, 1, &vertexShaderSourcePtr, nullptr);
     glCompileShader(vertexShader);
 
     GLint success;
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if(!success)
+    if (!success)
     {
         GLchar infoLog[512];
         glGetShaderInfoLog(vertexShader, sizeof(infoLog), nullptr, infoLog);
@@ -95,14 +94,13 @@ int main()
                   << infoLog << std::endl;
     }
 
-
     const auto fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    const GLchar* fragmentShaderSourcePtr = fragmentShaderSource.c_str();
+    const GLchar *fragmentShaderSourcePtr = fragmentShaderSource.c_str();
     glShaderSource(fragmentShader, 1, &fragmentShaderSourcePtr, nullptr);
     glCompileShader(fragmentShader);
 
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if(!success)
+    if (!success)
     {
         GLchar infoLog[512];
         glGetShaderInfoLog(fragmentShader, sizeof(infoLog), nullptr, infoLog);
@@ -118,7 +116,7 @@ int main()
     // Check for link errors
     int success2;
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success2);
-    if(!success2)
+    if (!success2)
     {
         char infoLog[512];
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
@@ -142,18 +140,15 @@ int main()
         return VAO;
     }();
 
-
-    updateVertices((float*)vertices, lineSize);
+    updateVertices(vertices);
 
     // print vertices
-    for(int i = 0; i < sizeof(vertices) / sizeof(float); i += 2)
+    for (int i = 0; i < vertices.size(); i += 2)
     {
         std::cout << vertices[i] << ", " << vertices[i + 1] << std::endl;
     }
 
-
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *)0);
 
     glEnableVertexAttribArray(0);
 
@@ -163,38 +158,35 @@ int main()
 
     glBindVertexArray(VAO);
 
-    
-    const auto bufferSize = sizeof(vertices);
+    const auto bufferSize = vertices.size() * sizeof(float);
     std::cout << "Buffer size: " << bufferSize << std::endl;
-    glBufferData(GL_ARRAY_BUFFER, bufferSize, vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, bufferSize, vertices.data(), GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
 
     std::cout << "Here!" << std::endl;
 
-
     glDrawArrays(GL_LINE_STRIP, 0, lineSize);
-    
+
     error = glGetError();
-    while(error != GL_NO_ERROR)
+    while (error != GL_NO_ERROR)
     {
-        const GLubyte* errorMessage = gluErrorString(error);
+        const GLubyte *errorMessage = gluErrorString(error);
         std::cerr << "OpenGL error: " << error << " (" << errorMessage << ")" << std::endl;
         error = glGetError();
     }
 
-
-    while(!wnd.shouldClose())
+    while (!wnd.shouldClose())
     {
         double time = glfw::getTime();
         glClear(GL_COLOR_BUFFER_BIT);
         // glClearColor((sin(time) + 1.0) / 2.0, (cos(time) + 1.0) / 2.0, (-sin(time) + 1.0) / 2.0, 0.0);
-        // glClear(GL_COLOR_BUFFER_BIT);
 
-        // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        updateVertices(vertices, time);
+
+        glBufferData(GL_ARRAY_BUFFER, bufferSize, vertices.data(), GL_DYNAMIC_DRAW);
 
         glDrawArrays(GL_LINE_STRIP, 0, lineSize);
-
 
         glfw::pollEvents();
         wnd.swapBuffers();
