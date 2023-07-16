@@ -16,7 +16,7 @@ namespace glfw
 {
     namespace impl
     {
-        inline void errorCallback(int errorCode_, const char* what_)
+        inline void errorCallback(int errorCode_, const char *what_)
         {
             // Error handling philosophy as per http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0709r4.pdf (section 1.1)
 
@@ -33,28 +33,28 @@ namespace glfw
             assert(errorCode_ != GLFW_INVALID_ENUM);
 
             // Allocation failure must be treated separately
-            if(errorCode_ == GLFW_OUT_OF_MEMORY)
+            if (errorCode_ == GLFW_OUT_OF_MEMORY)
             {
                 throw std::bad_alloc();
             }
 
-            switch(errorCode_)
+            switch (errorCode_)
             {
-                case GLFW_API_UNAVAILABLE:
-                    throw APIUnavailableError(what_);
-                case GLFW_VERSION_UNAVAILABLE:
-                    throw VersionUnavailableError(what_);
-                case GLFW_PLATFORM_ERROR:
-                    throw PlatformError(what_);
-                case GLFW_FORMAT_UNAVAILABLE:
-                    throw FormatUnavailableError(what_);
-                default:
-                    // There should be no other error possible
-                    assert(false);
+            case GLFW_API_UNAVAILABLE:
+                throw APIUnavailableError(what_);
+            case GLFW_VERSION_UNAVAILABLE:
+                throw VersionUnavailableError(what_);
+            case GLFW_PLATFORM_ERROR:
+                throw PlatformError(what_);
+            case GLFW_FORMAT_UNAVAILABLE:
+                throw FormatUnavailableError(what_);
+            default:
+                // There should be no other error possible
+                assert(false);
             }
         }
 
-        inline void monitorCallback(GLFWmonitor* monitor_, int eventType_)
+        inline void monitorCallback(GLFWmonitor *monitor_, int eventType_)
         {
             monitorEvent(Monitor{monitor_}, MonitorEventType{eventType_});
         }
@@ -63,7 +63,7 @@ namespace glfw
         {
             joystickEvent(Joystick{static_cast<decltype(Joystick::Joystick1)>(jid_)}, static_cast<JoystickEvent>(eventType_));
         }
-    }  // namespace impl
+    } // namespace impl
 
 #if GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 3
     struct InitHints
@@ -95,9 +95,9 @@ namespace glfw
             glfwSetErrorCallback(impl::errorCallback);
 
 #if GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 3
-            glfwInitHint(GLFW_JOYSTICK_HAT_BUTTONS, false);  // disable deprecated behavior
+            glfwInitHint(GLFW_JOYSTICK_HAT_BUTTONS, false); // disable deprecated behavior
 #endif
-            if(!glfwInit())
+            if (!glfwInit())
             {
                 throw glfw::Error("Could not initialize GLFW");
             }
@@ -118,23 +118,23 @@ namespace glfw
     }
 #endif
 
-    inline void setClipboardString(const char* content_)
+    inline void setClipboardString(const char *content_)
     {
         glfwSetClipboardString(nullptr, content_);
     }
 
-    [[nodiscard]] inline const char* getClipboardString()
+    [[nodiscard]] inline const char *getClipboardString()
     {
         return glfwGetClipboardString(nullptr);
     }
 
-    [[nodiscard]] inline bool extensionSupported(const char* extensionName_)
+    [[nodiscard]] inline bool extensionSupported(const char *extensionName_)
     {
         return glfwExtensionSupported(extensionName_);
     }
 
     using GlProc = GLFWglproc;
-    [[nodiscard]] inline GlProc getProcAddress(const char* procName_)
+    [[nodiscard]] inline GlProc getProcAddress(const char *procName_)
     {
         return glfwGetProcAddress(procName_);
     }
@@ -144,14 +144,14 @@ namespace glfw
         return glfwVulkanSupported();
     }
 
-    [[nodiscard]] inline std::vector<const char*> getRequiredInstanceExtensions()
+    [[nodiscard]] inline std::vector<const char *> getRequiredInstanceExtensions()
     {
         unsigned count;
         auto pExtensionNames = glfwGetRequiredInstanceExtensions(&count);
 
-        std::vector<const char*> extensionNames;
+        std::vector<const char *> extensionNames;
         extensionNames.reserve(count);
-        for(int i = 0; i < count; ++i)
+        for (unsigned int i = 0; i < count; ++i)
         {
             extensionNames.push_back(pExtensionNames[i]);
         }
@@ -159,33 +159,33 @@ namespace glfw
     }
     using VkProc = GLFWvkproc;
 #if defined(VK_VERSION_1_0)
-    [[nodiscard]] inline VkProc getInstanceProcAddress(VkInstance instance, const char* procName)
+    [[nodiscard]] inline VkProc getInstanceProcAddress(VkInstance instance, const char *procName)
     {
         return glfwGetInstanceProcAddress(instance, procName);
     }
 
     [[nodiscard]] inline bool getPhysicalDevicePresentationSupport(
-            VkInstance instance,
-            VkPhysicalDevice device,
-            uint32_t queueFamily)
+        VkInstance instance,
+        VkPhysicalDevice device,
+        uint32_t queueFamily)
     {
         return glfwGetPhysicalDevicePresentationSupport(instance, device, queueFamily);
     }
-#endif  // VK_VERSION_1_0
+#endif // VK_VERSION_1_0
 
 #ifdef VULKAN_HPP
-    [[nodiscard]] inline VkProc getInstanceProcAddress(const vk::Instance& instance, const char* procName)
+    [[nodiscard]] inline VkProc getInstanceProcAddress(const vk::Instance &instance, const char *procName)
     {
         return getInstanceProcAddress(static_cast<VkInstance>(instance), procName);
     }
     [[nodiscard]] inline bool getPhysicalDevicePresentationSupport(
-            const vk::Instance& instance,
-            const vk::PhysicalDevice& device,
-            uint32_t queueFamily)
+        const vk::Instance &instance,
+        const vk::PhysicalDevice &device,
+        uint32_t queueFamily)
     {
         return getPhysicalDevicePresentationSupport(static_cast<VkInstance>(instance), static_cast<VkPhysicalDevice>(device), queueFamily);
     }
-#endif  // VULKAN_HPP
+#endif // VULKAN_HPP
 
     [[nodiscard]] inline double getTime()
     {
@@ -206,6 +206,6 @@ namespace glfw
     {
         return glfwGetTimerFrequency();
     }
-}  // namespace glfw
+} // namespace glfw
 
-#endif  // GLFWPP_GLFWPP_H
+#endif // GLFWPP_GLFWPP_H
