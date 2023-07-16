@@ -1,3 +1,12 @@
 {
-  "C_Cpp.default.compilerPath": "c:\\mingw\\mingw64\\bin\\g++.exe"
+  "terminal.integrated.profiles.windows": {
+      "MSYS2 UCRT": {
+          "path": "cmd.exe",
+          "args": [
+              "/c",
+              "C:\\msys64\\msys2_shell.cmd -defterm -here -no-start -ucrt64"
+          ]
+      }
+},
+"C_Cpp.default.compilerPath": "c:\\msys64\\ucrt64\\bin\\g++.exe"
 }
