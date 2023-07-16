@@ -11,11 +11,24 @@ std::vector<float> vertices(lineSize * 2);
 void updateVertices(std::vector<float> &vertices, float phase = 0.0f)
 {
 
-    for (int i = 0; i < vertices.size() * 2; i += 2)
+    for (std::vector<float>::size_type i = 0; i < vertices.size() * 2; i += 2)
     {
-        vertices[i] = (float)(i) / vertices.size();
+        vertices[i] = 2 * (float)(i) / vertices.size() - 1;
         vertices[i + 1] = (float)cos(i / (float)vertices.size() * 1 * 2 * 3.14159265358979323846 + phase);
     }
+}
+
+void printVertices(const std::vector<float> &vertices)
+{
+    for (std::vector<float>::size_type i = 0; i < vertices.size(); i += 2)
+    {
+        std::cout << vertices[i] << ", " << vertices[i + 1] << std::endl;
+    }
+}
+
+void onResize([[maybe_unused]] GLFWwindow *window, int width, int height)
+{
+    glViewport(0, 0, width, height);
 }
 
 int main()
@@ -36,7 +49,7 @@ int main()
     //        .contextVersionMajor = 4,
     //        .contextVersionMinor = 6}
     //        .apply();
-    glfw::Window wnd(800, 600, "Line Example");
+    glfw::Window wnd(1200, 800, "Line Example");
 
     glEnable(GL_DEBUG_OUTPUT);
 
@@ -142,11 +155,7 @@ int main()
 
     updateVertices(vertices);
 
-    // print vertices
-    for (int i = 0; i < vertices.size(); i += 2)
-    {
-        std::cout << vertices[i] << ", " << vertices[i + 1] << std::endl;
-    }
+    // printVertices(vertices);
 
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *)0);
 
@@ -175,6 +184,8 @@ int main()
         std::cerr << "OpenGL error: " << error << " (" << errorMessage << ")" << std::endl;
         error = glGetError();
     }
+
+    glfwSetWindowSizeCallback(wnd, onResize);
 
     while (!wnd.shouldClose())
     {
