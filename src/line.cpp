@@ -5,16 +5,21 @@
 #include <string>
 #include <vector>
 
-const int lineSize = 100;
-std::vector<float> vertices(lineSize * 2);
+const int lineNum = 1000;
+const int lineSize = 1000;
+std::vector<float> vertices(lineNum *lineSize * 2);
 
 void updateVertices(std::vector<float> &vertices, float phase = 0.0f)
 {
-
-    for (std::vector<float>::size_type i = 0; i < vertices.size() * 2; i += 2)
+    for (int i = 0; i < lineNum; i++)
     {
-        vertices[i] = 2 * (float)(i) / vertices.size() - 1;
-        vertices[i + 1] = (float)cos(i / (float)vertices.size() * 1 * 2 * 3.14159265358979323846 + phase);
+        for (int j = 0; j < lineSize; j++)
+        {
+            const float x = 2 * (float)j / (float)lineSize - 1.0f;
+            const float y = sin(x * 10.0f + phase + (float)i * 0.5f);
+            vertices[(i * lineSize + j) * 2] = x;
+            vertices[(i * lineSize + j) * 2 + 1] = y;
+        }
     }
 }
 
@@ -153,8 +158,6 @@ int main()
         return VAO;
     }();
 
-    updateVertices(vertices);
-
     // printVertices(vertices);
 
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *)0);
@@ -169,13 +172,10 @@ int main()
 
     const auto bufferSize = vertices.size() * sizeof(float);
     std::cout << "Buffer size: " << bufferSize << std::endl;
-    glBufferData(GL_ARRAY_BUFFER, bufferSize, vertices.data(), GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
 
     std::cout << "Here!" << std::endl;
-
-    glDrawArrays(GL_LINE_STRIP, 0, lineSize);
 
     error = glGetError();
     while (error != GL_NO_ERROR)
@@ -195,9 +195,12 @@ int main()
 
         updateVertices(vertices, time);
 
-        glBufferData(GL_ARRAY_BUFFER, bufferSize, vertices.data(), GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, bufferSize, vertices.data(), GL_STATIC_DRAW);
 
-        glDrawArrays(GL_LINE_STRIP, 0, lineSize);
+        for (int i = 0; i < lineNum; i++)
+        {
+            glDrawArrays(GL_LINE_STRIP, i * lineSize, lineSize);
+        }
 
         glfw::pollEvents();
         wnd.swapBuffers();
