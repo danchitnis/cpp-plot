@@ -4,10 +4,15 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <chrono>
 
-const int lineNum = 1000;
-const int lineSize = 1000;
+const int lineNum = 500;
+const int lineSize = 2000;
 std::vector<float> vertices(lineNum *lineSize * 2);
+
+std::chrono::high_resolution_clock timer;
+std::chrono::nanoseconds elapsed(0);
+int fps = 0;
 
 void updateVertices(std::vector<float> &vertices, float phase = 0.0f)
 {
@@ -189,13 +194,15 @@ int main()
 
     while (!wnd.shouldClose())
     {
+        auto start = timer.now();
+
         double time = glfw::getTime();
         glClear(GL_COLOR_BUFFER_BIT);
         // glClearColor((sin(time) + 1.0) / 2.0, (cos(time) + 1.0) / 2.0, (-sin(time) + 1.0) / 2.0, 0.0);
 
         updateVertices(vertices, time);
 
-        glBufferData(GL_ARRAY_BUFFER, bufferSize, vertices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, bufferSize, vertices.data(), GL_DYNAMIC_DRAW);
 
         for (int i = 0; i < lineNum; i++)
         {
@@ -204,5 +211,18 @@ int main()
 
         glfw::pollEvents();
         wnd.swapBuffers();
+
+        auto end = timer.now();
+
+        elapsed += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+
+        fps++;
+
+        if (elapsed.count() > 1e9)
+        {
+            std::cout << "FPS: " << fps << std::endl;
+            elapsed = std::chrono::nanoseconds(0);
+            fps = 0;
+        }
     }
 }
