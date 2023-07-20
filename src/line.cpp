@@ -9,6 +9,7 @@
 const int lineNum = 3500;
 const int lineSize = 2000;
 std::vector<float> vertices(lineNum *lineSize * 2);
+std::vector<float> colors(lineNum *lineSize * 3);
 
 std::chrono::high_resolution_clock timer;
 std::chrono::nanoseconds elapsed(0);
@@ -27,6 +28,23 @@ void initVertices(std::vector<float> &vertices)
     }
 }
 
+void initColors(std::vector<float> &colors)
+{
+    for (int i = 0; i < lineNum; i++)
+    {
+        const float r = std::rand() / (float)RAND_MAX;
+        const float g = std::rand() / (float)RAND_MAX;
+        const float b = std::rand() / (float)RAND_MAX;
+
+        for (int j = 0; j < lineSize; j++)
+        {
+            colors[(i * lineSize + j) * 3] = r;
+            colors[(i * lineSize + j) * 3 + 1] = g;
+            colors[(i * lineSize + j) * 3 + 2] = b;
+        }
+    }
+}
+
 void updateVertices(std::vector<float> &vertices, float phase = 0.0f)
 {
     for (int i = 0; i < lineNum; i++)
@@ -35,7 +53,7 @@ void updateVertices(std::vector<float> &vertices, float phase = 0.0f)
         {
             //  const float x = 2 * (float)j / (float)lineSize - 1.0f;
             //  const float y = sin(x * 10.0f + phase + (float)i * 0.5f);
-            const float y = (float)i / (float)lineNum * 2.0f - 1.0f + j / (float)lineSize * 2.0f / (float)lineNum + fmod(0.1 * phase, 0.1);
+            const float y = (float)i / (float)lineNum * 2.0f - 1.0f + j / (float)lineSize * 2.0f / (float)lineNum + std::fmod(0.1 * phase, 0.1);
             // vertices[(i * lineSize + j) * 2] = x;
             vertices[(i * lineSize + j) * 2 + 1] = y;
         }
@@ -47,6 +65,14 @@ void printVertices(const std::vector<float> &vertices)
     for (std::vector<float>::size_type i = 0; i < vertices.size(); i += 2)
     {
         std::cout << vertices[i] << ", " << vertices[i + 1] << std::endl;
+    }
+}
+
+void printColors(const std::vector<float> &colors)
+{
+    for (std::vector<float>::size_type i = 0; i < colors.size(); i += 3)
+    {
+        std::cout << colors[i] << ", " << colors[i + 1] << ", " << colors[i + 2] << std::endl;
     }
 }
 
@@ -100,19 +126,25 @@ int main()
 
     const std::string vertexShaderSource = R"(
         #version 330 core
-        layout (location = 0) in vec3 aPos;
+        layout (location = 1) in vec2 aPos;
+        layout (location = 0) in vec3 aColor;
+
+        out vec3 vColor;
+        
         void main()
         {
-            gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+            vColor = aColor;
+            gl_Position = vec4(aPos.x, aPos.y, 0, 1.0);
         }
     )";
 
     const std::string fragmentShaderSource = R"(
         #version 330 core
+        in vec3 vColor;
         out vec4 FragColor;
         void main()
         {
-            FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
+            FragColor = vec4(vColor, 0.7);
         }
     )";
 
@@ -161,6 +193,14 @@ int main()
                   << infoLog << std::endl;
     }
 
+    [[maybe_unused]] const auto VAO = []()
+    {
+        GLuint VAO;
+        glGenVertexArrays(1, &VAO);
+        glBindVertexArray(VAO);
+        return VAO;
+    }();
+
     const auto VBO = []()
     {
         GLuint VBO;
@@ -169,30 +209,39 @@ int main()
         return VBO;
     }();
 
-    const auto VAO = []()
+    const auto CBO = []()
     {
-        GLuint VAO;
-        glGenVertexArrays(1, &VAO);
-        glBindVertexArray(VAO);
-        return VAO;
+        GLuint CBO;
+        glGenBuffers(1, &CBO);
+        glBindBuffer(GL_ARRAY_BUFFER, CBO);
+        return CBO;
     }();
 
     // printVertices(vertices);
 
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *)0);
+    initColors(colors);
 
-    glEnableVertexAttribArray(0);
+    // printColors(colors);
+
+    glBindBuffer(GL_ARRAY_BUFFER, CBO);
+    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW);
+    auto colorAttribute = glGetAttribLocation(shaderProgram, "aColor");
+    std::cout << "Color attribute: " << colorAttribute << std::endl;
+    glEnableVertexAttribArray(colorAttribute);
+    glVertexAttribPointer(colorAttribute, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+    // Position
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+    // setup
 
     glUseProgram(shaderProgram);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-    glBindVertexArray(VAO);
-
     const auto bufferSize = vertices.size() * sizeof(float);
     std::cout << "Buffer size: " << bufferSize << std::endl;
-
-    glEnableVertexAttribArray(0);
 
     std::cout << "Here!" << std::endl;
 
@@ -207,6 +256,8 @@ int main()
     glfwSetWindowSizeCallback(wnd, onResize);
 
     initVertices(vertices);
+
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
     while (!wnd.shouldClose())
     {
