@@ -127,7 +127,7 @@ int main()
     const std::string vertexShaderSource = R"(
         #version 330 core
         layout (location = 1) in vec2 aPos;
-        layout (location = 0) in vec3 aColor;
+        layout (location = 2) in vec3 aColor;
 
         out vec3 vColor;
         
@@ -227,15 +227,15 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, CBO);
     glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(char), colors.data(), GL_STATIC_DRAW);
     auto colorAttribute = glGetAttribLocation(shaderProgram, "aColor");
-    std::cout << "Color attribute: " << colorAttribute << std::endl;
     glEnableVertexAttribArray(colorAttribute);
     glVertexAttribPointer(colorAttribute, 3, GL_UNSIGNED_BYTE, GL_FALSE, 0, (void *)0);
 
     // Position
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    auto positionAttribute = glGetAttribLocation(shaderProgram, "aPos");
+    glEnableVertexAttribArray(positionAttribute);
+    glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
 
     // setup
 
