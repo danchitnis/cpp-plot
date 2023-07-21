@@ -6,11 +6,11 @@
 #include <vector>
 #include <chrono>
 
-const int lineNum = 3000;
+const int lineNum = 3;
 const int lineSize = 2000;
 
 std::vector<float> vertices(lineNum *lineSize * 2);
-std::vector<float> colors(lineNum *lineSize * 3);
+std::vector<char> colors(lineNum *lineSize * 3);
 
 std::chrono::high_resolution_clock timer;
 std::chrono::nanoseconds elapsed(0);
@@ -29,7 +29,7 @@ void initVertices(std::vector<float> &vertices)
     }
 }
 
-void initColors(std::vector<float> &colors)
+void initColors(std::vector<char> &colors)
 {
     for (int i = 0; i < lineNum; i++)
     {
@@ -39,9 +39,9 @@ void initColors(std::vector<float> &colors)
 
         for (int j = 0; j < lineSize; j++)
         {
-            colors[(i * lineSize + j) * 3] = r;
-            colors[(i * lineSize + j) * 3 + 1] = g;
-            colors[(i * lineSize + j) * 3 + 2] = b;
+            colors[(i * lineSize + j) * 3] = r * 255.0f;
+            colors[(i * lineSize + j) * 3 + 1] = g * 255.0f;
+            colors[(i * lineSize + j) * 3 + 2] = b * 255.0f;
         }
     }
 }
@@ -135,6 +135,7 @@ int main()
         {
             vColor = aColor;
             gl_Position = vec4(aPos.x, aPos.y, 0, 1.0);
+            vColor = aColor/ vec3(255.0, 255.0, 255.0);
         }
     )";
 
@@ -224,11 +225,11 @@ int main()
     // printColors(colors);
 
     glBindBuffer(GL_ARRAY_BUFFER, CBO);
-    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(char), colors.data(), GL_STATIC_DRAW);
     auto colorAttribute = glGetAttribLocation(shaderProgram, "aColor");
     std::cout << "Color attribute: " << colorAttribute << std::endl;
     glEnableVertexAttribArray(colorAttribute);
-    glVertexAttribPointer(colorAttribute, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    glVertexAttribPointer(colorAttribute, 3, GL_UNSIGNED_BYTE, GL_FALSE, 0, (void *)0);
 
     // Position
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
