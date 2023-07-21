@@ -6,8 +6,9 @@
 #include <vector>
 #include <chrono>
 
-const int lineNum = 3500;
+const int lineNum = 3000;
 const int lineSize = 2000;
+
 std::vector<float> vertices(lineNum *lineSize * 2);
 std::vector<float> colors(lineNum *lineSize * 3);
 
@@ -49,13 +50,12 @@ void updateVertices(std::vector<float> &vertices, float phase = 0.0f)
 {
     for (int i = 0; i < lineNum; i++)
     {
+        const float y0 = (float)i / (float)lineNum + phase * 0.1f;
         for (int j = 0; j < lineSize; j++)
         {
-            //  const float x = 2 * (float)j / (float)lineSize - 1.0f;
-            //  const float y = sin(x * 10.0f + phase + (float)i * 0.5f);
-            const float y = (float)i / (float)lineNum * 2.0f - 1.0f + j / (float)lineSize * 2.0f / (float)lineNum + std::fmod(0.1 * phase, 0.1);
-            // vertices[(i * lineSize + j) * 2] = x;
-            vertices[(i * lineSize + j) * 2 + 1] = y;
+            float y = y0 + j * 0.1 / (float)lineSize;
+            const float yy = y - std::lroundf(y);
+            vertices[(i * lineSize + j) * 2 + 1] = 2 * yy;
         }
     }
 }
