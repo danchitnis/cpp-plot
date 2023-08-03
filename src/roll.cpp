@@ -6,11 +6,13 @@
 #include <vector>
 #include <chrono>
 
-const int lineNum = 3300;
-const int lineSize = 2000;
+const int lineNum = 3;
+const int rollBufferSize = 2000;
 
-std::vector<float> vertices(lineNum *lineSize * 2);
-std::vector<char> colors(lineNum *lineSize * 3);
+const int lineSize = rollBufferSize + 2;
+
+std::vector<float> vertices(lineNum *(rollBufferSize + 2) * 2);
+std::vector<char> colors(lineNum *(rollBufferSize + 2) * 3);
 
 std::chrono::high_resolution_clock timer;
 std::chrono::nanoseconds elapsed(0);
@@ -22,7 +24,7 @@ void initVertices(std::vector<float> &vertices)
     {
         for (int j = 0; j < lineSize; j++)
         {
-            const float x = 2 * (float)j / (float)lineSize - 1.0f;
+            const float x = -1.0 + 2.0 * j / (lineSize - 1);
             vertices[(i * lineSize + j) * 2] = x;
             vertices[(i * lineSize + j) * 2 + 1] = 0.0;
         }
@@ -46,18 +48,39 @@ void initColors(std::vector<char> &colors)
     }
 }
 
-void updateVertices(std::vector<float> &vertices, float phase = 0.0f)
+void updateVertices(std::vector<float> &ys, float &dataX, int &dataIndex, float &shift, GLint &shiftUniform, std::vector<float> &lastDataX, std::vector<float> &lastDataY)
 {
+    const int bfSize = rollBufferSize + 2;
+    shift = shift + 2.0 / rollBufferSize;
+    dataX = dataX + 2.0 / rollBufferSize;
+
+    glUniform1f(shiftUniform, shift);
+
     for (int i = 0; i < lineNum; i++)
     {
-        const float y0 = (float)i / (float)lineNum + phase * 0.1f;
-        for (int j = 0; j < lineSize; j++)
+        std::vector<float> data = {dataX, ys[i]};
+        glBufferSubData(GL_ARRAY_BUFFER, (i * bfSize + dataIndex) * 2 * sizeof(float), data.size() * sizeof(float), data.data());
+    }
+
+    if (dataIndex == rollBufferSize - 1)
+    {
+        for (int i = 0; i < lineNum; i++)
         {
-            const float y = y0 + j * 0.1 / (float)lineSize;
-            const float yy = y - std::lroundf(y);
-            vertices[(i * lineSize + j) * 2 + 1] = 2 * yy;
+            lastDataX[i] = dataX;
+            lastDataY[i] = ys[i];
         }
     }
+
+    if (dataIndex == 0 && lastDataX[0] != 0)
+    {
+        for (int i = 0; i < lineNum; i++)
+        {
+            std::vector<float> data = {lastDataX[i], lastDataY[i], dataX, ys[i]};
+            glBufferSubData(GL_ARRAY_BUFFER, (i * bfSize + rollBufferSize) * 2 * sizeof(float), data.size() * sizeof(float), data.data());
+        }
+    }
+
+    dataIndex = (dataIndex + 1) % rollBufferSize;
 }
 
 void printVertices(const std::vector<float> &vertices)
@@ -129,12 +152,14 @@ int main()
         layout (location = 1) in vec2 aPos;
         layout (location = 2) in vec3 aColor;
 
+        uniform float uShift;
         out vec3 vColor;
         
         void main()
         {
             vColor = aColor;
-            gl_Position = vec4(aPos.x, aPos.y, 0, 1.0);
+            vec2 shiftedPosition = aPos - vec2(uShift, 0);
+            gl_Position = vec4(shiftedPosition, 0, 1);
             vColor = aColor/ vec3(255.0, 255.0, 255.0);
         }
     )";
@@ -237,6 +262,9 @@ int main()
     glEnableVertexAttribArray(positionAttribute);
     glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
 
+    // uniforms
+    GLint shiftUniform = glGetUniformLocation(shaderProgram, "uShift");
+
     // setup
 
     glUseProgram(shaderProgram);
@@ -260,21 +288,45 @@ int main()
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
+    glBufferData(GL_ARRAY_BUFFER, bufferSize, vertices.data(), GL_DYNAMIC_DRAW);
+
+    float dataX = 1;
+    int dataIndex = 0;
+    float shift = 0;
+
+    std::vector<float> lastDataX(lineNum, 0.0f);
+    std::vector<float> lastDataY(lineNum, 0.0f);
+
+    const int bfSize = rollBufferSize + 2;
+
+    std::vector<float> ys(lineNum);
+
     while (!wnd.shouldClose())
     {
         auto start = timer.now();
 
-        double time = glfw::getTime();
+        // double time = glfw::getTime();
         glClear(GL_COLOR_BUFFER_BIT);
-        // glClearColor((sin(time) + 1.0) / 2.0, (cos(time) + 1.0) / 2.0, (-sin(time) + 1.0) / 2.0, 0.0);
-
-        updateVertices(vertices, time);
-
-        glBufferData(GL_ARRAY_BUFFER, bufferSize, vertices.data(), GL_DYNAMIC_DRAW);
 
         for (int i = 0; i < lineNum; i++)
         {
-            glDrawArrays(GL_LINE_STRIP, i * lineSize, lineSize);
+            const float a = ys[i] + 0.01 * (i + 1) / lineNum;
+            ys[i] = a - std::lroundf(a);
+        }
+
+        updateVertices(ys, dataX, dataIndex, shift, shiftUniform, lastDataX, lastDataY);
+
+        // print ys
+        /*for (std::vector<float>::size_type i = 0; i < ys.size(); i++)
+        {
+            std::cout << dataX << ", " << ys[i] << ", " << shift << ", " << dataIndex << std::endl;
+        }*/
+
+        for (int i = 0; i < lineNum; i++)
+        {
+            glDrawArrays(GL_LINE_STRIP, i * bfSize, dataIndex);
+            glDrawArrays(GL_LINE_STRIP, i * bfSize + dataIndex, rollBufferSize - dataIndex);
+            glDrawArrays(GL_LINE_STRIP, i * bfSize + rollBufferSize, 2);
         }
 
         glfw::pollEvents();
