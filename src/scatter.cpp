@@ -6,8 +6,9 @@
 #include <vector>
 #include <chrono>
 
-const float squareSize = 0.02f;
-const int maxSquareNum = 100;
+const float squareSize = 0.001f;
+const int maxSquareNum = 30000000;
+const int newDataNum = 1000;
 
 std::vector<float> squarePositions(maxSquareNum * 2);
 const std::vector<char> squareIndices = {0, 1, 2, 2, 1, 3};
@@ -22,7 +23,7 @@ int fps = 0;
 void initPos(std::vector<float> &pos)
 {
     // set all to zero
-    for (int i = 0; i < pos.size(); i++)
+    for (size_t i = 0; i < pos.size(); i++)
     {
         pos[i] = 0.0f;
     }
@@ -30,7 +31,7 @@ void initPos(std::vector<float> &pos)
 
 void initColors(std::vector<char> &colors)
 {
-    for (int i = 0; i < colors.size(); i++)
+    for (size_t i = 0; i < colors.size(); i++)
     {
         colors[i] = std::rand() % 255;
     }
@@ -248,7 +249,15 @@ int main()
         float time = glfw::getTime();
         glClear(GL_COLOR_BUFFER_BIT);
 
-        std::vector<float> pos = {(1 / aspectRatio) * (2 * std::rand() / (float)RAND_MAX - 1), 2 * std::rand() / (float)RAND_MAX - 1};
+        // std::vector<float> pos = {(1 / aspectRatio) * (2 * std::rand() / (float)RAND_MAX - 1), 2 * std::rand() / (float)RAND_MAX - 1};
+
+        std::vector<float> pos(newDataNum * 2);
+
+        for (size_t i = 0; i < pos.size(); i += 2)
+        {
+            pos[i] = (1 / aspectRatio) * (2 * std::rand() / (float)RAND_MAX - 1);
+            pos[i + 1] = 2 * std::rand() / (float)RAND_MAX - 1;
+        }
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferSubData(GL_ARRAY_BUFFER, headIndex * 2 * sizeof(float), pos.size() * sizeof(float), pos.data());
