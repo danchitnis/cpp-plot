@@ -20,8 +20,8 @@ struct RollData
     std::vector<float> lastDataY;
 };
 
-std::vector<float> vertices(lineNum *(rollBufferSize + 2) * 2);
-std::vector<char> colors(lineNum *(rollBufferSize + 2) * 3);
+std::vector<float> vertices(static_cast<size_t>(lineNum) * (rollBufferSize + 2) * 2);
+std::vector<char> colors(static_cast<size_t>(lineNum) * (rollBufferSize + 2) * 3);
 
 std::chrono::high_resolution_clock timer;
 std::chrono::nanoseconds elapsed(0);
@@ -29,9 +29,9 @@ int fps = 0;
 
 void initVertices(std::vector<float> &vertices)
 {
-    for (int i = 0; i < lineNum; i++)
+    for (size_t i = 0; i < lineNum; i++)
     {
-        for (int j = 0; j < lineSize; j++)
+        for (size_t j = 0; j < lineSize; j++)
         {
             const float x = -1.0 + 2.0 * j / (lineSize - 1);
             vertices[(i * lineSize + j) * 2] = x;
@@ -42,13 +42,13 @@ void initVertices(std::vector<float> &vertices)
 
 void initColors(std::vector<char> &colors)
 {
-    for (int i = 0; i < lineNum; i++)
+    for (size_t i = 0; i < lineNum; i++)
     {
         const float r = std::rand() / (float)RAND_MAX;
         const float g = std::rand() / (float)RAND_MAX;
         const float b = std::rand() / (float)RAND_MAX;
 
-        for (int j = 0; j < lineSize; j++)
+        for (size_t j = 0; j < lineSize; j++)
         {
             colors[(i * lineSize + j) * 3] = r * 255.0f;
             colors[(i * lineSize + j) * 3 + 1] = g * 255.0f;
@@ -65,7 +65,7 @@ void updateVertices(std::vector<float> &ys, RollData &rollData, GLint shiftUnifo
 
     glUniform1f(shiftUniform, rollData.shift);
 
-    for (int i = 0; i < lineNum; i++)
+    for (size_t i = 0; i < lineNum; i++)
     {
         std::vector<float> data = {rollData.dataX, ys[i]};
         glBufferSubData(GL_ARRAY_BUFFER, (i * bfSize + rollData.dataIndex) * 2 * sizeof(float), data.size() * sizeof(float), data.data());
@@ -73,7 +73,7 @@ void updateVertices(std::vector<float> &ys, RollData &rollData, GLint shiftUnifo
 
     if (rollData.dataIndex == rollBufferSize - 1)
     {
-        for (int i = 0; i < lineNum; i++)
+        for (size_t i = 0; i < lineNum; i++)
         {
             rollData.lastDataX[i] = rollData.dataX;
             rollData.lastDataY[i] = ys[i];
@@ -82,7 +82,7 @@ void updateVertices(std::vector<float> &ys, RollData &rollData, GLint shiftUnifo
 
     if (rollData.dataIndex == 0 && rollData.lastDataX[0] != 0)
     {
-        for (int i = 0; i < lineNum; i++)
+        for (size_t i = 0; i < lineNum; i++)
         {
             std::vector<float> data = {rollData.lastDataX[i], rollData.lastDataY[i], rollData.dataX, ys[i]};
             glBufferSubData(GL_ARRAY_BUFFER, (i * bfSize + rollBufferSize) * 2 * sizeof(float), data.size() * sizeof(float), data.data());
@@ -315,7 +315,7 @@ int main()
         // double time = glfw::getTime();
         glClear(GL_COLOR_BUFFER_BIT);
 
-        for (int i = 0; i < lineNum; i++)
+        for (size_t i = 0; i < lineNum; i++)
         {
             const float a = ys[i] + 0.01 * (i + 1) / lineNum;
             ys[i] = a - std::lroundf(a);
@@ -323,7 +323,7 @@ int main()
 
         updateVertices(ys, rollData, shiftUniform);
 
-        for (int i = 0; i < lineNum; i++)
+        for (size_t i = 0; i < lineNum; i++)
         {
             glDrawArrays(GL_LINE_STRIP, i * bfSize, rollData.dataIndex);
             glDrawArrays(GL_LINE_STRIP, i * bfSize + rollData.dataIndex, rollBufferSize - rollData.dataIndex);
